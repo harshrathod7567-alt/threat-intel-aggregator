@@ -1,4 +1,5 @@
 import requests
+import ipaddress
 
 FEED_URL = "https://iplists.firehol.org/files/firehol_level1.netset"
 
@@ -8,17 +9,40 @@ def fetch_feed(url):
     return response.text
 
 def parse_ip_list(raw_text):
-    ips = []
+    entries = []
     for line in raw_text.splitlines():
         line = line.strip()
-        if line and not line.startswith("#"):  # skip comments/blank lines
-            ips.append(line)
-    return ips
+        if line and not line.startswith("#"):
+            try:
+                # handles both single IPs and CIDR ranges (e.g. 10.0.0.0/8)
+                entries.append(ipaddress.ip_network(line, strict=False))
+            except ValueError:
+                continue  # skip malformed lines
+    return entries
+
+def check_ip_against_feed(ip_str, feed_entries):
+    try:
+        ip_obj = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return False, None
+    
+    for network in feed_entries:
+        if ip_obj in network:
+            return True, str(network)
+    
+    return False, None
 
 raw_data = fetch_feed(FEED_URL)
-malicious_ips = parse_ip_list(raw_data)
+feed_entries = parse_ip_list(raw_data)
 
-print(f"Fetched {len(malicious_ips)} entries from the threat feed")
-print("Sample entries:")
-for ip in malicious_ips[:10]:
-    print(f"  {ip}")
+print(f"Loaded {len(feed_entries)} network ranges from threat feed\n")
+
+# test a few IPs
+test_ips = ["8.8.8.8", "1.1.1.1", "10.0.0.5"]
+
+for ip in test_ips:
+    is_malicious, matched_range = check_ip_against_feed(ip, feed_entries)
+    if is_malicious:
+        print(f"⚠️ {ip} — MATCHED malicious range: {matched_range}")
+    else:
+        print(f"{ip} — not found in threat feed")
