@@ -25,11 +25,14 @@ Install dependencies: `pip install requests`
 3. Check the terminal output and `threat_report.txt` for results
 
 ## Example output
-Loaded 4200+ network ranges from threat feed
-Found 3 unique IPs in the log file
 
-192.168.1.10: clean
+Loaded 4200+ network ranges from threat feed
+Found 4 unique IPs in the log file
+
 10.0.0.5: ⚠️ MATCHED: 10.0.0.0/8
+192.168.1.15: clean
+8.8.8.8: clean
+192.168.1.10: clean
 
 
 ## What I learned
@@ -37,6 +40,9 @@ Found 3 unique IPs in the log file
 - Fetching and parsing live external threat intelligence feeds
 - Chaining tools together into a pipeline (logs → extraction → lookup → report), 
   similar to real SOC automation workflows
+- That sandboxed/restricted network environments can block outbound requests to 
+  external feeds — a real consideration when deploying tools in locked-down 
+  corporate environments too
 
 ## Next steps
 - Support multiple feeds at once (URLhaus for malicious URLs, abuse.ch for malware hashes)
